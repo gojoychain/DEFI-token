@@ -1,6 +1,5 @@
 pragma solidity ^0.5.11;
 
-import "./IJRC223.sol";
 import "./JRC223.sol";
 import "../lib/Ownable.sol";
 import "../lib/ByteUtils";
@@ -13,7 +12,6 @@ import "../lib/SafeMath";
  *      5% of JUSD will go to owner of DEFI smart contract.
  */
 contract DEFI is JRC223, JRC223Receiver, Ownable {
-    using ByteUtils for bytes;
     using SafeMath for uint;
 
     uint8 private constant OWNER_PERCENTAGE = 5;
@@ -48,8 +46,7 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
     {
         require(msg.sender == _jusdToken, "Only JUSD is accepted");
 
-        bytes memory funcHash = data.sliceBytes(0, 4);
-        bytes32 encodedFunc = keccak256(abi.encodePacked(funcHash));
+        bytes32 encodedFunc = keccak256(abi.encodePacked(data));
         if (encodedFunc == keccak256(abi.encodePacked(hex"045d0389"))) {
             exchange(from, amount);
         } else {
@@ -58,7 +55,7 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
     }
 
     /**
-     * @dev Exchanges JUSD for DEFI. Increments balances and transfers some JUSD to owner.
+     * @dev Exchanges JUSD for DEFI. Increment balances and transfers some JUSD to owner.
      * @param exchanger Address of the exchanger.
      * @param amount Amount being exchanged.
      */
@@ -70,9 +67,10 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
         _balances[exchanger] = _balances[exchanger].add(amount);
 
         // Calculate JUSD going to owner and transfer
-        uint transferAmt = amount.mul(uint256(OWNER_PERCENTAGE)).div(100);
-        IJRC223(_jusdToken).transfer(owner(), transferAmt);
+        uint ownerAmt = amount.mul(uint256(OWNER_PERCENTAGE)).div(100);
+        JRC223(_jusdToken).transfer(owner(), ownerAmt);
 
+        // Emit DEFI transfer events
         bytes memory empty;
         emit Transfer(address(0), exchanger, amount);
         emit Transfer(address(0), exchanger, amount, empty);
