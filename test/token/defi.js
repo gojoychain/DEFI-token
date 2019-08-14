@@ -1,6 +1,6 @@
 const { assert } = require('chai')
 const { sassert, TimeMachine, getConstants } = require('sol-army-knife')
-const JRC223 = artifacts.require('JRC223')
+const JRC223Mock = artifacts.require('JRC223Mock')
 const DEFI = artifacts.require('DEFI')
 
 const web3 = global.web3
@@ -8,16 +8,25 @@ const web3 = global.web3
 contract('DEFI', (accounts) => {
   const { ACCT0, ACCT1, INVALID_ADDR, MAX_GAS } = getConstants(accounts)
   const timeMachine = new TimeMachine(web3)
-  let token
+  let jusd
+  let defi
+  let defiMethods
 
   beforeEach(async () => {
     await timeMachine.snapshot()
 
-    token = new web3.eth.Contract(DEFI.abi)
-    token = await token.deploy({
-      data: DEFI.bytecode,
-      arguments: [ACCT0, '0x28d7fEecd1aB9Dae7d83cbB986f2A2Ecb127183d'],
+    jusd = new web3.eth.Contract(JRC223Mock.abi)
+    jusd = await jusd.deploy({
+      data: JRC223Mock.bytecode,
+      arguments: [ACCT0],
     }).send({ from: ACCT0, gas: MAX_GAS })
+
+    defi = new web3.eth.Contract(DEFI.abi)
+    defi = await defi.deploy({
+      data: DEFI.bytecode,
+      arguments: [ACCT0, jusd._address],
+    }).send({ from: ACCT0, gas: MAX_GAS })
+    defiMethods = defi.methods
   })
   
   afterEach(async () => {
@@ -26,12 +35,11 @@ contract('DEFI', (accounts) => {
 
   describe.only('constructor', async () => {
     it.only('should initialize all the values correctly', async () => {
-      // assert.equal(await token.methods.owner().call(), TOKEN_PARAMS.owner)
-      // assert.equal(await token.methods.name().call(), TOKEN_PARAMS.name)
-      // assert.equal(await token.methods.symbol().call(), TOKEN_PARAMS.symbol)
-      // assert.equal(await token.methods.decimals().call(), TOKEN_PARAMS.decimals)
-      // assert.equal(await token.methods.totalSupply().call(), TOKEN_PARAMS.totalSupply)
-      // assert.equal(await token.methods.balanceOf(TOKEN_PARAMS.owner).call(), TOKEN_PARAMS.totalSupply)
+      assert.equal(await defiMethods.owner().call(), ACCT0)
+      assert.equal(await defiMethods.name().call(), 'DEFI Token')
+      assert.equal(await defiMethods.symbol().call(), 'DEFI')
+      assert.equal(await defiMethods.decimals().call(), 18)
+      assert.equal(await defiMethods.totalSupply().call(), 0)
     })
 
     it('should emit both Transfer events', async () => {

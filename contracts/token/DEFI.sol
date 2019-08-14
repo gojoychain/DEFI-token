@@ -15,10 +15,6 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
 
     uint8 private constant OWNER_PERCENTAGE = 5;
 
-    string internal _name = "DEFI token";
-    string internal _symbol = "DEFI";
-    uint8 internal _decimals = 18;
-    uint256 internal _totalSupply = 0;
     address private _jusdToken;
 
     /**
@@ -34,6 +30,10 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
         validAddress(owner)
         validAddress(jusdToken)
     {
+        _name = "DEFI Token";
+        _symbol = "DEFI";
+        _decimals = 18;
+        _totalSupply = 0;
         _jusdToken = jusdToken;
     }
 
