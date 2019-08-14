@@ -26,7 +26,6 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "mocha": "^6.2.0",
-    "sol-assert": "^1.3.0",
-    "sol-time-machine": "^1.1.0"
+    "sol-army-knife": "file:../../dwalintukan/sol-army-knife/sol-army-knife-1.0.0.tgz"
   }
 }
