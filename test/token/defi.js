@@ -76,6 +76,19 @@ contract('DEFI', (accounts) => {
     })
   })
 
+  describe('tokenFallback', () => {
+    it('throws if an unhandled function is called', async () => {
+      await sassert.revert(
+        jusdMethods['transfer(address,uint256,bytes)'](
+          defi._address,
+          '1',
+          web3.utils.hexToBytes('0x12345678'),
+        ).send({ from: ACCT0, gas: 200000 }),
+        'Unhandled function in tokenFallback',
+      )
+    })
+  })
+
   describe('exchange', () => {
     const ownerPercentage = 5
 
