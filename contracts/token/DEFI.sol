@@ -2,8 +2,7 @@ pragma solidity ^0.5.11;
 
 import "./JRC223.sol";
 import "../lib/Ownable.sol";
-import "../lib/ByteUtils";
-import "../lib/SafeMath";
+import "../lib/SafeMath.sol";
 
 /**
  * @title DEFI token contract.
@@ -20,7 +19,7 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
     string internal _symbol = "DEFI";
     uint8 internal _decimals = 18;
     uint256 internal _totalSupply = 0;
-    string private _jusdToken;
+    address private _jusdToken;
 
     /**
      * @dev Creates the token.
