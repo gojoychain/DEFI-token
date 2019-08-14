@@ -9,37 +9,35 @@ import "../lib/Ownable.sol";
  *      95% of JUSD will be stored in DEFI smart contract.
  *      5% of JUSD will go to owner of DEFI smart contract.
  */
-contract DEFI is JRC223, Ownable {
+contract DEFI is JRC223, JRC223Receiver, Ownable {
+    string internal _name = "DEFI token";
+    string internal _symbol = "DEFI";
+    uint8 internal _decimals = 18;
+    uint256 internal _totalSupply = 0;
+    string private _jusdToken;
+
     /**
-     * @dev Creates the token and mints the initial token supply to the owner.
-     * @param name Name of the token.
-     * @param symbol Symbol of the token.
-     * @param decimals Decimals of the token.
-     * @param totalSupply Initial supply of tokens.
-     * @param owner Owner of the initial tokens.
+     * @dev Creates the token.
+     * @param owner Owner of the contract.
      */
     constructor(
-        string memory name,
-        string memory symbol,
-        uint8 decimals,
-        uint256 totalSupply,
-        address owner)
+        address owner,
+        address jusdToken)
         Ownable(owner)
         public
         validAddress(owner)
+        validAddress(jusdToken)
     {
-        require(bytes(name).length > 0, "name cannot be empty.");
-        require(bytes(symbol).length > 0, "symbol cannot be empty.");
+        _jusdToken = jusdToken;
+    }
 
-        _name = name;
-        _symbol = symbol;
-        _decimals = decimals;
-        _totalSupply = totalSupply;
-        _balances[owner] = totalSupply;
-
-        bytes memory empty;
-        emit Transfer(address(0), owner, totalSupply);
-        emit Transfer(address(0), owner, totalSupply, empty);
+    function tokenFallback(
+        address from,
+        uint amount,
+        bytes calldata data)
+        external
+    {
+        require(msg.sender == _jusdToken, "Only JUSD is accepted");
     }
 
     /**
