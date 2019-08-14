@@ -63,7 +63,7 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
      * @param amount Amount being exchanged.
      */
     function exchange(address exchanger, uint amount) private {
-        require(amount > 0, "amount should be greater than 0");
+        require(amount > 0, "Amount should be greater than 0");
 
         // Mint new DEFI
         _totalSupply = _totalSupply.add(amount);
