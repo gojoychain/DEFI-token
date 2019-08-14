@@ -34,12 +34,13 @@ contract('DEFI', (accounts) => {
   })
 
   describe.only('constructor', async () => {
-    it.only('should initialize all the values correctly', async () => {
+    it('should initialize all the values correctly', async () => {
       assert.equal(await defiMethods.owner().call(), ACCT0)
       assert.equal(await defiMethods.name().call(), 'DEFI Token')
       assert.equal(await defiMethods.symbol().call(), 'DEFI')
       assert.equal(await defiMethods.decimals().call(), 18)
       assert.equal(await defiMethods.totalSupply().call(), 0)
+      assert.equal(await defiMethods.jusdToken().call(), jusd._address)
     })
 
     it('should emit both Transfer events', async () => {

@@ -53,6 +53,10 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
         }
     }
 
+    function jusdToken() external view returns (address) {
+        return _jusdToken;
+    }
+
     /**
      * @dev Exchanges JUSD for DEFI. Increment balances and transfers some JUSD to owner.
      * @param exchanger Address of the exchanger.
