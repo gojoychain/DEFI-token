@@ -46,8 +46,8 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
         require(msg.sender == _jusdToken, "Only JUSD is accepted");
 
         bytes32 encodedFunc = keccak256(abi.encodePacked(data));
-        if (encodedFunc == keccak256(abi.encodePacked(hex"045d0389"))) {
-            exchange(from, amount);
+        if (encodedFunc == keccak256(abi.encodePacked(hex"1178acd9"))) {
+            exchangeToDEFI(from, amount);
         } else {
             revert("Unhandled function in tokenFallback");
         }
@@ -84,11 +84,11 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
     }
 
     /**
-     * @dev Exchanges JUSD for DEFI. Increment balances and transfers some JUSD to owner.
+     * @dev Exchanges JUSD for DEFI.
      * @param exchanger Address of the exchanger.
      * @param amount Amount being exchanged.
      */
-    function exchange(address exchanger, uint amount) private {
+    function exchangeToDEFI(address exchanger, uint amount) private {
         require(amount > 0, "Amount should be greater than 0");
 
         // Mint new DEFI

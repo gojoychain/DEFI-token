@@ -9,7 +9,7 @@ const { toDenomination } = SolUtils
 
 contract('DEFI', (accounts) => {
   const { ACCT0, ACCT1, INVALID_ADDR, MAX_GAS } = getConstants(accounts)
-  const EXCHANGE_FUNC_SIG = '0x045d0389'
+  const EXCHANGE_FUNC_SIG = '0x1178acd9'
   const timeMachine = new TimeMachine(web3)
   const fundAmt = '1000000000000000000000'
   let jusd
