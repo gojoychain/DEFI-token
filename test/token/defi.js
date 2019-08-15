@@ -10,6 +10,7 @@ const { toDenomination } = SolUtils
 contract('DEFI', (accounts) => {
   const { ACCT0, ACCT1, INVALID_ADDR, MAX_GAS } = getConstants(accounts)
   const EXCHANGE_FUNC_SIG = '0x1178acd9'
+  const OWNER_PERCENTAGE = 5
   const timeMachine = new TimeMachine(web3)
   const fundAmt = '1000000000000000000000'
   let jusd
@@ -89,9 +90,96 @@ contract('DEFI', (accounts) => {
     })
   })
 
-  describe('exchange', () => {
-    const ownerPercentage = 5
+  describe('exchangeToJUSD', () => {
+    it('should burn exchanged DEFI and transfer JUSD to the exchanger', async () => {
+      // Verify beginning balances
+      let exchangerDEFI = toBN(await defiMethods.balanceOf(ACCT1).call())
+      sassert.bnEqual(exchangerDEFI, 0)
+      let exchangerJUSD = toBN(await jusdMethods.balanceOf(ACCT1).call())
+      sassert.bnEqual(exchangerJUSD, fundAmt)
+      let contractJUSD = toBN(await jusdMethods.balanceOf(defi._address).call())
+      sassert.bnEqual(contractJUSD, 0)
+      let ownerJUSD = toBN(await jusdMethods.balanceOf(ACCT0).call())
 
+      // Exchange to DEFI
+      const jusdToDEFIAmt = toDenomination(2, 18)
+      await jusdMethods['transfer(address,uint256,bytes)'](
+        defi._address,
+        jusdToDEFIAmt.toString(10),
+        web3.utils.hexToBytes(EXCHANGE_FUNC_SIG),
+      ).send({ from: ACCT1, gas: 200000 })
+      sassert.bnEqual(await defiMethods.totalSupply().call(), jusdToDEFIAmt)
+
+      // Check exchanger balances
+      exchangerDEFI = exchangerDEFI.add(jusdToDEFIAmt)
+      sassert.bnEqual(await defiMethods.balanceOf(ACCT1).call(), exchangerDEFI)
+      exchangerJUSD = exchangerJUSD.sub(jusdToDEFIAmt)
+      sassert.bnEqual(await jusdMethods.balanceOf(ACCT1).call(), exchangerJUSD)
+
+      // Check contract balances
+      contractJUSD = contractJUSD.add(
+        jusdToDEFIAmt.mul(toBN(100 - OWNER_PERCENTAGE)).div(toBN(100)),
+      )
+      sassert.bnEqual(
+        await jusdMethods.balanceOf(defi._address).call(),
+        contractJUSD,
+      )
+
+      // Check owner percentage transferred
+      ownerJUSD = ownerJUSD.add(
+        jusdToDEFIAmt.mul(toBN(OWNER_PERCENTAGE)).div(toBN(100)),
+      );
+      sassert.bnEqual(await jusdMethods.balanceOf(ACCT0).call(), ownerJUSD)
+
+      // Exchange to JUSD
+      const defiToJUSDAmt = toDenomination(1, 18)
+      const txReceipt = await defiMethods.exchangeToJUSD(defiToJUSDAmt.toString(10))
+        .send({ from: ACCT1 })
+      sassert.bnEqual(
+        await defiMethods.totalSupply().call(),
+        jusdToDEFIAmt.sub(defiToJUSDAmt),
+      )
+
+      // Check exchanger balances
+      exchangerDEFI = exchangerDEFI.sub(defiToJUSDAmt)
+      sassert.bnEqual(await defiMethods.balanceOf(ACCT1).call(), exchangerDEFI)
+      exchangerJUSD = exchangerJUSD.add(
+        defiToJUSDAmt.mul(toBN(100 - OWNER_PERCENTAGE)).div(toBN(100)),
+      )
+      sassert.bnEqual(await jusdMethods.balanceOf(ACCT1).call(), exchangerJUSD)
+
+      // Check contract balances
+      contractJUSD = contractJUSD.sub(
+        defiToJUSDAmt.mul(toBN(100 - OWNER_PERCENTAGE)).div(toBN(100)),
+      )
+      sassert.bnEqual(
+        await jusdMethods.balanceOf(defi._address).call(),
+        contractJUSD,
+      )
+
+      // Check Transfer events
+      // 2 from JUSD: DEFI to exchanger
+      // 2 from DEFI: exchanger to burn
+      sassert.event(txReceipt, 'Transfer', 4)
+    })
+
+    it('throws if amount is 0', async () => {
+      await sassert.revert(
+        defiMethods.exchangeToJUSD(0).send({ from: ACCT1 }),
+        'Amount should be greater than 0',
+      )
+    })
+
+    it('throws if exchanger does not have enough balance', async () => {
+      sassert.bnEqual(await defiMethods.balanceOf(ACCT1).call(), 0)
+      await sassert.revert(
+        defiMethods.exchangeToJUSD(1).send({ from: ACCT1 }),
+        'Exchanger does not have enough balance',
+      )
+    })
+  })
+
+  describe('exchangeToDEFI', () => {
     it('should mint new DEFI and transfer some JUSD to the owner', async () => {
       sassert.bnEqual(await defiMethods.balanceOf(ACCT1).call(), 0)
       sassert.bnEqual(await jusdMethods.balanceOf(ACCT1).call(), fundAmt)
@@ -112,7 +200,7 @@ contract('DEFI', (accounts) => {
       )
 
       // Check 5% JUSD went to owner
-      const ownerAmt = toBN(amt).mul(toBN(ownerPercentage)).div(toBN(100))
+      const ownerAmt = toBN(amt).mul(toBN(OWNER_PERCENTAGE)).div(toBN(100))
       sassert.bnEqual(
         await jusdMethods.balanceOf(ACCT0).call(),
         toBN(oldOwnerAmt).add(ownerAmt),

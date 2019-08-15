@@ -84,6 +84,13 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
     }
 
     /**
+     * @dev Allows the owner to withdraw the remaining JUSD in the contract.
+     */
+    function withdrawJUSD() external onlyOwner {
+
+    }
+
+    /**
      * @dev Exchanges JUSD for DEFI.
      * @param exchanger Address of the exchanger.
      * @param amount Amount being exchanged.
