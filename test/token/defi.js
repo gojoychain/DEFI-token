@@ -158,8 +158,8 @@ contract('DEFI', (accounts) => {
       )
 
       // Check Transfer events
-      // 2 from JUSD: DEFI to exchanger
-      // 2 from DEFI: exchanger to burn
+      // 2 from JUSD: DEFI -> exchanger
+      // 2 from DEFI: exchanger -> burn
       sassert.event(txReceipt, 'Transfer', 4)
     })
 
@@ -181,35 +181,49 @@ contract('DEFI', (accounts) => {
 
   describe('exchangeToDEFI', () => {
     it('should mint new DEFI and transfer some JUSD to the owner', async () => {
-      sassert.bnEqual(await defiMethods.balanceOf(ACCT1).call(), 0)
-      sassert.bnEqual(await jusdMethods.balanceOf(ACCT1).call(), fundAmt)
-      const oldOwnerAmt = await jusdMethods.balanceOf(ACCT0).call()
+      // Verify beginning balances
+      let exchangerDEFI = toBN(await defiMethods.balanceOf(ACCT1).call())
+      sassert.bnEqual(exchangerDEFI, 0)
+      let exchangerJUSD = toBN(await jusdMethods.balanceOf(ACCT1).call())
+      sassert.bnEqual(exchangerJUSD, fundAmt)
+      let contractJUSD = toBN(await jusdMethods.balanceOf(defi._address).call())
+      sassert.bnEqual(contractJUSD, 0)
+      let ownerJUSD = toBN(await jusdMethods.balanceOf(ACCT0).call())
 
-      // Check acct balance changes
-      const amt = toDenomination(1, 18).toString(10)
+      // Exchange to DEFI
+      const jusdToDEFIAmt = toDenomination(2, 18)
       const txReceipt = await jusdMethods['transfer(address,uint256,bytes)'](
         defi._address,
-        amt,
+        jusdToDEFIAmt.toString(10),
         web3.utils.hexToBytes(EXCHANGE_FUNC_SIG),
       ).send({ from: ACCT1, gas: 200000 })
-      sassert.bnEqual(await defiMethods.balanceOf(ACCT1).call(), amt)
-      sassert.bnEqual(await defiMethods.totalSupply().call(), amt)
+      sassert.bnEqual(await defiMethods.totalSupply().call(), jusdToDEFIAmt)
+
+      // Check exchanger balances
+      exchangerDEFI = exchangerDEFI.add(jusdToDEFIAmt)
+      sassert.bnEqual(await defiMethods.balanceOf(ACCT1).call(), exchangerDEFI)
+      exchangerJUSD = exchangerJUSD.sub(jusdToDEFIAmt)
+      sassert.bnEqual(await jusdMethods.balanceOf(ACCT1).call(), exchangerJUSD)
+
+      // Check contract balances
+      contractJUSD = contractJUSD.add(
+        jusdToDEFIAmt.mul(toBN(100 - OWNER_PERCENTAGE)).div(toBN(100)),
+      )
       sassert.bnEqual(
-        await jusdMethods.balanceOf(ACCT1).call(),
-        toBN(fundAmt).sub(toBN(amt))
+        await jusdMethods.balanceOf(defi._address).call(),
+        contractJUSD,
       )
 
-      // Check 5% JUSD went to owner
-      const ownerAmt = toBN(amt).mul(toBN(OWNER_PERCENTAGE)).div(toBN(100))
-      sassert.bnEqual(
-        await jusdMethods.balanceOf(ACCT0).call(),
-        toBN(oldOwnerAmt).add(ownerAmt),
-      )
+      // Check owner percentage transferred
+      ownerJUSD = ownerJUSD.add(
+        jusdToDEFIAmt.mul(toBN(OWNER_PERCENTAGE)).div(toBN(100)),
+      );
+      sassert.bnEqual(await jusdMethods.balanceOf(ACCT0).call(), ownerJUSD)
 
-      // Check 6 Transfer events
-      // 2 from call to JUSD.transfer223
-      // 2 from DEFI.transfer (minting new tokens)
-      // 2 from DEFI to JUSD transfer owner percentage
+      // Check Transfer events
+      // 2 from JUSD: exchanger -> DEFI
+      // 2 from JUSD: DEFI -> DEFI.owner
+      // 2 from DEFI: burn -> exchanger
       sassert.event(txReceipt, 'Transfer', 6)
     })
 
