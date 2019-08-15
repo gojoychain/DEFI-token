@@ -58,6 +58,32 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
     }
 
     /**
+     * @dev Exchanges DEFI for JUSD.
+     * @param amount Amount to exchange.
+     */
+    function exchangeToJUSD(uint amount) external {
+        require(amount > 0, "Amount should be greater than 0");
+        require(
+            _balances[msg.sender] >= amount,
+            "Exchanger does not have enough balance"
+        );
+
+        // Burn exchanged DEFI
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        _totalSupply = _totalSupply.sub(amount);
+
+        // Contract keeps percentage of JUSD for exchanging service
+        uint exchAmt = amount.mul(uint256(100 - OWNER_PERCENTAGE)).div(100);
+        JRC223(_jusdToken).transfer(msg.sender, exchAmt);
+
+        // Emit DEFI transfer events
+        // From exchanger to burn address
+        bytes memory empty;
+        emit Transfer(msg.sender, address(0), amount);
+        emit Transfer(msg.sender, address(0), amount, empty);
+    }
+
+    /**
      * @dev Exchanges JUSD for DEFI. Increment balances and transfers some JUSD to owner.
      * @param exchanger Address of the exchanger.
      * @param amount Amount being exchanged.
@@ -66,14 +92,15 @@ contract DEFI is JRC223, JRC223Receiver, Ownable {
         require(amount > 0, "Amount should be greater than 0");
 
         // Mint new DEFI
-        _totalSupply = _totalSupply.add(amount);
         _balances[exchanger] = _balances[exchanger].add(amount);
+        _totalSupply = _totalSupply.add(amount);
 
         // Calculate JUSD going to owner and transfer
         uint ownerAmt = amount.mul(uint256(OWNER_PERCENTAGE)).div(100);
         JRC223(_jusdToken).transfer(owner(), ownerAmt);
 
         // Emit DEFI transfer events
+        // From burn address to exchanger
         bytes memory empty;
         emit Transfer(address(0), exchanger, amount);
         emit Transfer(address(0), exchanger, amount, empty);
