@@ -1,0 +1,31 @@
+{
+  "name": "defi-token",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DEFI token",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "npx truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gojoychain/DEFI-token.git"
+  },
+  "author": "Deric Walintukan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gojoychain/DEFI-token/issues"
+  },
+  "homepage": "https://github.com/gojoychain/DEFI-token#readme",
+  "dependencies": {
+    "truffle": "^5.0.31"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.2.0",
+    "sol-army-knife": "^1.0.0"
+  }
+}
